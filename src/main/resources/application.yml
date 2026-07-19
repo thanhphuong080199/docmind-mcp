@@ -1,0 +1,20 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/docmind
+    username: docmind
+    password: docmind
+  ai:
+    model:
+      chat: none
+    ollama:
+      base-url: http://localhost:11434
+      init:
+        pull-model-strategy: when_missing
+      embedding:
+        model: nomic-embed-text
+    vectorstore:
+      pgvector:
+        initialize-schema: true
+        dimensions: 768
+        index-type: HNSW
+        distance-type: COSINE_DISTANCE
