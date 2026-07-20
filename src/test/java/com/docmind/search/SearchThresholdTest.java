@@ -46,9 +46,9 @@ class SearchThresholdTest {
         ingestionService.ingestFile(file);
 
         SearchService permissive = new SearchService(vectorStore,
-                new DocmindProperties(null, false, 0.0));
+                new DocmindProperties(null, false, 0.0), jdbcTemplate);
         SearchService strict = new SearchService(vectorStore,
-                new DocmindProperties(null, false, 0.99));
+                new DocmindProperties(null, false, 0.99), jdbcTemplate);
 
         assertThat(permissive.search("event streaming", 5)).isNotEmpty();
         assertThat(strict.search("event streaming", 5)).isEmpty();
