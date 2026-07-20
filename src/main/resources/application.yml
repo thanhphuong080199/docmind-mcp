@@ -2,6 +2,8 @@ docmind:
   docs-dir: ./docs-inbox
   scan-on-startup: false
   similarity-threshold: 0.60
+  rescan-enabled: false
+  rescan-interval: PT10M
 
 spring:
   datasource:
