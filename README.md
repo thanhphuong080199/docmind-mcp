@@ -3,7 +3,7 @@
 An MCP server that turns your private docs into a searchable, always-on knowledge base for
 any AI assistant. Built with Spring Boot 4.1 + Spring AI 2.0 + pgvector + Ollama.
 
-Work in progress — currently at Milestone 3 (real ingestion: PDF, dedup, folder scan).
+Work in progress — currently at Milestone 4 (catalog + LLM summaries).
 
 ## Prerequisites
 
@@ -15,6 +15,7 @@ Work in progress — currently at Milestone 3 (real ingestion: PDF, dedup, folde
 ```bash
 docker compose up -d
 docker exec docmind-ollama ollama pull nomic-embed-text   # first time only
+docker exec docmind-ollama ollama pull qwen3:4b           # first time only (~2.6 GB, used for summaries)
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=demo    # ingest sample doc + run a search
 ./mvnw test                                               # integration tests (needs compose up)
 ```
@@ -42,7 +43,8 @@ npx @modelcontextprotocol/inspector
 ```
 
 Available tools: `search_docs(query, topK?, docId?)`, `ingest_document(path)`,
-`remove_document(docId)`.
+`remove_document(docId)`, `list_available_docs()`, `get_doc_summary(docId)`.
+Resource: `docmind://docs` (JSON document catalog).
 
 Drop `.md`/`.pdf` files into `./docs-inbox` and set `docmind.scan-on-startup: true`
 (or call the `ingest_document` tool) to index them. Unchanged files are skipped by
