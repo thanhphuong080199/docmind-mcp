@@ -60,6 +60,20 @@ class IngestionToolsTest {
     }
 
     @Test
+    void ingestUrlReportsSuccessAndErrors() {
+        UUID id = UUID.randomUUID();
+        when(ingestionService.ingestUrl("https://example.com/doc", null)).thenReturn(new DocumentSource(
+                id, "https://example.com/doc", "https://example.com/doc", "WEB", "abc",
+                2, null, "INGESTED", Instant.now()));
+
+        assertThat(tools.ingestUrl("https://example.com/doc", null)).contains(id.toString());
+
+        when(ingestionService.ingestUrl("not a url", null))
+                .thenThrow(new IllegalArgumentException("Not an absolute URL: not a url"));
+        assertThat(tools.ingestUrl("not a url", null)).startsWith("Error:");
+    }
+
+    @Test
     void removeReportsFoundAndNotFound() {
         UUID id = UUID.randomUUID();
         when(ingestionService.removeDocument(id)).thenReturn(true);

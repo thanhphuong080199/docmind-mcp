@@ -1,6 +1,7 @@
 package com.docmind.mcp;
 
 import java.util.List;
+import java.util.UUID;
 
 import com.docmind.search.SearchService;
 import org.springframework.ai.mcp.annotation.McpTool;
@@ -30,5 +31,17 @@ public class SearchTools {
             @McpToolParam(description = "Restrict search to one document id", required = false) String docId) {
         int k = (topK == null || topK < 1) ? DEFAULT_TOP_K : Math.min(topK, MAX_TOP_K);
         return searchService.search(query, k, docId);
+    }
+
+    @McpTool(name = "get_chunk_context", description = """
+            Fetch the chunks surrounding a search hit (same document, neighboring \
+            chunk_index values) to get more context than a single chunk provides. \
+            Use the docId and chunkIndex from a search_docs result.""")
+    public List<SearchService.ChunkContext> getChunkContext(
+            @McpToolParam(description = "Document id (UUID) from a search result") String docId,
+            @McpToolParam(description = "chunk_index of the hit") int chunkIndex,
+            @McpToolParam(description = "Neighbors on each side, 1-5 (default 1)", required = false) Integer window) {
+        return searchService.chunkContext(UUID.fromString(docId), chunkIndex,
+                window == null ? 1 : window);
     }
 }

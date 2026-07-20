@@ -2,6 +2,7 @@ package com.docmind.ingestion;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
@@ -15,12 +16,14 @@ import java.util.function.Supplier;
 import com.docmind.domain.DocumentSource;
 import com.docmind.domain.DocumentSourceRepository;
 import org.springframework.ai.document.Document;
+import org.springframework.ai.reader.jsoup.JsoupDocumentReader;
 import org.springframework.ai.reader.markdown.MarkdownDocumentReader;
 import org.springframework.ai.reader.markdown.config.MarkdownDocumentReaderConfig;
 import org.springframework.ai.reader.pdf.PagePdfDocumentReader;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.filter.FilterExpressionBuilder;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.data.jdbc.core.JdbcAggregateTemplate;
@@ -59,6 +62,27 @@ public class IngestionService {
         String sourceUri = sourceUriOf(resource);
         String checksum = sha256(contentOf(resource));
         return doIngest(sourceUri, "MARKDOWN", title, checksum, () -> readDocuments("MARKDOWN", resource));
+    }
+
+    public DocumentSource ingestUrl(String url, String title) {
+        URI uri = URI.create(url);
+        if (uri.getScheme() == null) {
+            throw new IllegalArgumentException("Not an absolute URL: " + url);
+        }
+        byte[] content = fetch(uri);
+        String checksum = sha256(content);
+        String effectiveTitle = (title == null || title.isBlank()) ? url : title;
+        return doIngest(url, "WEB", effectiveTitle, checksum,
+                () -> new JsoupDocumentReader(new ByteArrayResource(content)).get());
+    }
+
+    private static byte[] fetch(URI uri) {
+        try (var in = uri.toURL().openStream()) {
+            return in.readAllBytes();
+        }
+        catch (IOException e) {
+            throw new UncheckedIOException("Cannot fetch " + uri, e);
+        }
     }
 
     public boolean removeDocument(UUID docId) {

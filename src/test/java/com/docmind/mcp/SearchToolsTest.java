@@ -26,7 +26,7 @@ class SearchToolsTest {
     @Test
     void delegatesWithDefaults() {
         List<SearchService.SearchResult> expected = List.of(
-                new SearchService.SearchResult("id-1", "file:///a.md", "content", 0.9));
+                new SearchService.SearchResult("id-1", "file:///a.md", 0, "content", 0.9));
         when(searchService.search("query", 5, null)).thenReturn(expected);
 
         assertThat(searchTools.searchDocs("query", null, null)).isEqualTo(expected);
