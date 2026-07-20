@@ -61,6 +61,15 @@ public class IngestionService {
         return doIngest(sourceUri, "MARKDOWN", title, checksum, () -> readDocuments("MARKDOWN", resource));
     }
 
+    public boolean removeDocument(UUID docId) {
+        return repository.findById(docId)
+                .map(doc -> {
+                    removeExisting(doc);
+                    return true;
+                })
+                .orElse(false);
+    }
+
     private DocumentSource doIngest(String sourceUri, String docType, String title,
                                     String checksum, Supplier<List<Document>> readDocs) {
         var existing = repository.findBySourceUri(sourceUri);

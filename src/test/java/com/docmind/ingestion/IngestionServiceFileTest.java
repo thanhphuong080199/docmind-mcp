@@ -29,6 +29,9 @@ class IngestionServiceFileTest {
     @Autowired
     JdbcTemplate jdbcTemplate;
 
+    @Autowired
+    com.docmind.search.SearchService searchService;
+
     @TempDir
     Path tempDir;
 
@@ -117,5 +120,19 @@ class IngestionServiceFileTest {
                 file.toAbsolutePath().normalize().toUri().toString()).orElseThrow();
         assertThat(failed.status()).isEqualTo("FAILED");
         assertThat(failed.chunkCount()).isZero();
+    }
+
+    @Test
+    void removeDocumentDeletesChunksAndMetadata() throws Exception {
+        Path file = tempDir.resolve("notes.md");
+        Files.writeString(file, "# Kafka\n\nKafka is a distributed event streaming platform.\n");
+        DocumentSource doc = ingestionService.ingestFile(file);
+
+        boolean removed = ingestionService.removeDocument(doc.id());
+
+        assertThat(removed).isTrue();
+        assertThat(repository.count()).isZero();
+        assertThat(searchService.search("Kafka", 5, doc.id().toString())).isEmpty();
+        assertThat(ingestionService.removeDocument(doc.id())).isFalse();
     }
 }
