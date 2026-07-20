@@ -123,6 +123,24 @@ class IngestionServiceFileTest {
     }
 
     @Test
+    void ingestsWebPageByUrl() throws Exception {
+        Path html = tempDir.resolve("page.html");
+        Files.writeString(html, """
+                <html><head><title>Gradle Basics</title></head>
+                <body><h1>Gradle</h1><p>Gradle builds projects using a task graph.</p></body></html>
+                """);
+        String url = html.toUri().toString();
+
+        DocumentSource doc = ingestionService.ingestUrl(url, "Gradle Basics");
+
+        assertThat(doc.docType()).isEqualTo("WEB");
+        assertThat(doc.sourceUri()).isEqualTo(url);
+        assertThat(doc.status()).isEqualTo("INGESTED");
+        assertThat(doc.chunkCount()).isGreaterThan(0);
+        assertThat(ingestionService.ingestUrl(url, "Gradle Basics").id()).isEqualTo(doc.id()); // checksum skip
+    }
+
+    @Test
     void removeDocumentDeletesChunksAndMetadata() throws Exception {
         Path file = tempDir.resolve("notes.md");
         Files.writeString(file, "# Kafka\n\nKafka is a distributed event streaming platform.\n");

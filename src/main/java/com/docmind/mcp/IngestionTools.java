@@ -39,6 +39,22 @@ public class IngestionTools {
         }
     }
 
+    @McpTool(name = "ingest_url", description = """
+            Fetch a web page and ingest its text content into the documentation index. \
+            Re-ingesting an unchanged page is a no-op; a changed page replaces its chunks.""")
+    public String ingestUrl(
+            @McpToolParam(description = "Absolute http(s) URL of the page") String url,
+            @McpToolParam(description = "Optional display title (defaults to the URL)", required = false) String title) {
+        try {
+            DocumentSource doc = ingestionService.ingestUrl(url, title);
+            return "Ingested '%s' (id=%s, %d chunks, status=%s)"
+                    .formatted(doc.title(), doc.id(), doc.chunkCount(), doc.status());
+        }
+        catch (Exception e) {
+            return "Error: could not ingest " + url + " — " + e.getMessage();
+        }
+    }
+
     @McpTool(name = "remove_document", description = """
             Remove an ingested document and all its chunks from the index by document id \
             (ids appear in search_docs results and list_available_docs).""")
