@@ -1,7 +1,7 @@
 docmind:
   docs-dir: ./docs-inbox
   scan-on-startup: false
-  similarity-threshold: 0.0
+  similarity-threshold: 0.60
 
 spring:
   datasource:
