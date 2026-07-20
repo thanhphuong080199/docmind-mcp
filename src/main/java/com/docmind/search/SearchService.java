@@ -11,9 +11,11 @@ import org.springframework.stereotype.Service;
 public class SearchService {
 
     private final VectorStore vectorStore;
+    private final double similarityThreshold;
 
-    public SearchService(VectorStore vectorStore) {
+    public SearchService(VectorStore vectorStore, com.docmind.config.DocmindProperties properties) {
         this.vectorStore = vectorStore;
+        this.similarityThreshold = properties.similarityThreshold();
     }
 
     public List<SearchResult> search(String query, int topK) {
@@ -23,7 +25,8 @@ public class SearchService {
     public List<SearchResult> search(String query, int topK, String docId) {
         SearchRequest.Builder request = SearchRequest.builder()
                 .query(query)
-                .topK(topK);
+                .topK(topK)
+                .similarityThreshold(similarityThreshold);
         if (docId != null && !docId.isBlank()) {
             request.filterExpression(new FilterExpressionBuilder()
                     .eq("doc_id", docId)
