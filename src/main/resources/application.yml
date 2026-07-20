@@ -6,6 +6,14 @@ spring:
   ai:
     model:
       chat: none
+    mcp:
+      server:
+        name: docmind
+        version: 0.1.0
+        protocol: STREAMABLE
+        instructions: "Semantic search over locally ingested technical documentation. Use search_docs to ground answers in the user's own docs."
+        streamable-http:
+          mcp-endpoint: /mcp
     ollama:
       base-url: http://localhost:11434
       init:
