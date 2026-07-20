@@ -1,3 +1,7 @@
+docmind:
+  docs-dir: ./docs-inbox
+  scan-on-startup: false
+
 spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/docmind
