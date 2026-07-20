@@ -3,7 +3,7 @@
 An MCP server that turns your private docs into a searchable, always-on knowledge base for
 any AI assistant. Built with Spring Boot 4.1 + Spring AI 2.0 + pgvector + Ollama.
 
-Work in progress — currently at Milestone 4 (catalog + LLM summaries).
+Work in progress — currently at Milestone 5 (Claude end-to-end).
 
 ## Prerequisites
 
@@ -49,6 +49,37 @@ Resource: `docmind://docs` (JSON document catalog).
 Drop `.md`/`.pdf` files into `./docs-inbox` and set `docmind.scan-on-startup: true`
 (or call the `ingest_document` tool) to index them. Unchanged files are skipped by
 SHA-256 checksum; changed files are re-ingested.
+
+## Connecting Claude
+
+The server must be running first (`docker compose up -d`, then
+`mvnw spring-boot:run`). Both registrations point at `http://localhost:8080/mcp`.
+
+**Claude Code:**
+
+```powershell
+claude mcp add --transport http docmind http://localhost:8080/mcp
+claude mcp list   # expect: docmind ... - ✓ Connected
+```
+
+Inside a session, `/mcp` lists docmind's tools. Ask a question only your ingested
+docs can answer and Claude will call `search_docs`.
+
+**Claude Desktop:** Settings → Connectors → Add custom connector → name
+`docmind`, URL `http://localhost:8080/mcp`. If custom connectors are unavailable
+on your plan, add this to `%APPDATA%\Claude\claude_desktop_config.json` instead
+and restart Claude Desktop:
+
+```json
+{
+  "mcpServers": {
+    "docmind": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "http://localhost:8080/mcp"]
+    }
+  }
+}
+```
 
 ## Design
 
