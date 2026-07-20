@@ -17,4 +17,9 @@ public record DocumentSource(
         String summary,
         String status,
         Instant ingestedAt) {
+
+    public DocumentSource withSummary(String newSummary) {
+        return new DocumentSource(id, title, sourceUri, docType, checksum,
+                chunkCount, newSummary, status, ingestedAt);
+    }
 }
