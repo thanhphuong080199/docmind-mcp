@@ -8,4 +8,6 @@ import org.springframework.data.repository.ListCrudRepository;
 public interface DocumentSourceRepository extends ListCrudRepository<DocumentSource, UUID> {
 
     Optional<DocumentSource> findBySourceUri(String sourceUri);
+
+    java.util.List<DocumentSource> findByDocTypeAndSourceUriStartingWith(String docType, String prefix);
 }
