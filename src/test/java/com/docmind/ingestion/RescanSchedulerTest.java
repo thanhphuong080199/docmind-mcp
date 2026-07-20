@@ -13,7 +13,7 @@ class RescanSchedulerTest {
     @Test
     void rescanDelegatesToScannerWithConfiguredFolder() {
         DocsFolderScanner scanner = mock(DocsFolderScanner.class);
-        DocmindProperties properties = new DocmindProperties(Path.of("some-dir"), false, 0.0);
+        DocmindProperties properties = new DocmindProperties(Path.of("some-dir"), false, 0.0, null);
 
         new RescanScheduler(scanner, properties).rescan();
 

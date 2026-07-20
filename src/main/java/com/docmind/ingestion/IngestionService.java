@@ -3,6 +3,7 @@ package com.docmind.ingestion;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
@@ -55,13 +56,13 @@ public class IngestionService {
         String docType = docTypeOf(normalized);
         String checksum = sha256(readBytes(normalized));
         Resource resource = new FileSystemResource(normalized);
-        return doIngest(sourceUri, docType, title, checksum, () -> readDocuments(docType, resource));
+        return doIngest(sourceUri, docType, title, checksum, () -> readDocuments(docType, resource)).document();
     }
 
     public DocumentSource ingestMarkdown(Resource resource, String title) {
         String sourceUri = sourceUriOf(resource);
         String checksum = sha256(contentOf(resource));
-        return doIngest(sourceUri, "MARKDOWN", title, checksum, () -> readDocuments("MARKDOWN", resource));
+        return doIngest(sourceUri, "MARKDOWN", title, checksum, () -> readDocuments("MARKDOWN", resource)).document();
     }
 
     public DocumentSource ingestUrl(String url, String title) {
@@ -73,7 +74,14 @@ public class IngestionService {
         String checksum = sha256(content);
         String effectiveTitle = (title == null || title.isBlank()) ? url : title;
         return doIngest(url, "WEB", effectiveTitle, checksum,
-                () -> new JsoupDocumentReader(new ByteArrayResource(content)).get());
+                () -> new JsoupDocumentReader(new ByteArrayResource(content)).get()).document();
+    }
+
+    public IngestOutcome ingestConfluencePage(String sourceUri, String title, String storageXhtml) {
+        byte[] body = storageXhtml.getBytes(StandardCharsets.UTF_8);
+        String checksum = sha256((title + "\n" + storageXhtml).getBytes(StandardCharsets.UTF_8));
+        return doIngest(sourceUri, "CONFLUENCE", title, checksum,
+                () -> new JsoupDocumentReader(new ByteArrayResource(body)).get());
     }
 
     private static byte[] fetch(URI uri) {
@@ -94,13 +102,13 @@ public class IngestionService {
                 .orElse(false);
     }
 
-    private DocumentSource doIngest(String sourceUri, String docType, String title,
-                                    String checksum, Supplier<List<Document>> readDocs) {
+    private IngestOutcome doIngest(String sourceUri, String docType, String title,
+                                   String checksum, Supplier<List<Document>> readDocs) {
         var existing = repository.findBySourceUri(sourceUri);
         if (existing.isPresent()
                 && checksum.equals(existing.get().checksum())
                 && "INGESTED".equals(existing.get().status())) {
-            return existing.get();
+            return new IngestOutcome(existing.get(), true);
         }
         existing.ifPresent(this::removeExisting);
 
@@ -115,9 +123,9 @@ public class IngestionService {
             }
             vectorStore.add(chunks);
 
-            return aggregateTemplate.insert(new DocumentSource(
+            return new IngestOutcome(aggregateTemplate.insert(new DocumentSource(
                     docId, title, sourceUri, docType, checksum,
-                    chunks.size(), null, "INGESTED", Instant.now()));
+                    chunks.size(), null, "INGESTED", Instant.now())), false);
         }
         catch (RuntimeException e) {
             aggregateTemplate.insert(new DocumentSource(
@@ -125,6 +133,9 @@ public class IngestionService {
                     0, null, "FAILED", Instant.now()));
             throw new IngestionException("Failed to ingest " + sourceUri + ": " + e.getMessage(), e);
         }
+    }
+
+    public record IngestOutcome(DocumentSource document, boolean skipped) {
     }
 
     private List<Document> readDocuments(String docType, Resource resource) {

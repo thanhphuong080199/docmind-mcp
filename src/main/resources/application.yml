@@ -4,6 +4,14 @@ docmind:
   similarity-threshold: 0.60
   rescan-enabled: false
   rescan-interval: PT10M
+  # Confluence Cloud ingestion (Milestone 7). Leave base-url unset to disable entirely.
+  # confluence:
+  #   base-url: https://yourcompany.atlassian.net   # no trailing /wiki
+  #   email: you@company.com
+  #   api-token: ${CONFLUENCE_API_TOKEN}            # env var only — never commit
+  #   space-keys: [DOCS, ENG]
+  #   sync-enabled: false
+  #   sync-interval: PT1H
 
 spring:
   datasource:
