@@ -3,7 +3,7 @@
 An MCP server that turns your private docs into a searchable, always-on knowledge base for
 any AI assistant. Built with Spring Boot 4.1 + Spring AI 2.0 + pgvector + Ollama.
 
-Work in progress — currently at Milestone 1 (ingestion + search, no MCP yet).
+Work in progress — currently at Milestone 2 (MCP server with search_docs).
 
 ## Prerequisites
 
@@ -30,6 +30,18 @@ pull via Google's mirror and retag:
 docker pull mirror.gcr.io/pgvector/pgvector:pg17 && docker tag mirror.gcr.io/pgvector/pgvector:pg17 pgvector/pgvector:pg17
 docker pull mirror.gcr.io/ollama/ollama:latest && docker tag mirror.gcr.io/ollama/ollama:latest ollama/ollama:latest
 ```
+
+## Using the MCP server
+
+Start the app, then connect any MCP client to `http://localhost:8080/mcp`
+(Streamable-HTTP). Quick check with MCP Inspector:
+
+```bash
+npx @modelcontextprotocol/inspector
+# Transport: Streamable HTTP, URL: http://localhost:8080/mcp
+```
+
+Available tools: `search_docs(query, topK?, docId?)`.
 
 ## Design
 
