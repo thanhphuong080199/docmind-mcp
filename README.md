@@ -3,7 +3,7 @@
 An MCP server that turns your private docs into a searchable, always-on knowledge base for
 any AI assistant. Built with Spring Boot 4.1 + Spring AI 2.0 + pgvector + Ollama.
 
-Work in progress — currently at Milestone 2 (MCP server with search_docs).
+Work in progress — currently at Milestone 3 (real ingestion: PDF, dedup, folder scan).
 
 ## Prerequisites
 
@@ -41,7 +41,12 @@ npx @modelcontextprotocol/inspector
 # Transport: Streamable HTTP, URL: http://localhost:8080/mcp
 ```
 
-Available tools: `search_docs(query, topK?, docId?)`.
+Available tools: `search_docs(query, topK?, docId?)`, `ingest_document(path)`,
+`remove_document(docId)`.
+
+Drop `.md`/`.pdf` files into `./docs-inbox` and set `docmind.scan-on-startup: true`
+(or call the `ingest_document` tool) to index them. Unchanged files are skipped by
+SHA-256 checksum; changed files are re-ingested.
 
 ## Design
 
