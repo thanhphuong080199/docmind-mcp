@@ -64,4 +64,20 @@ class IngestAndSearchIntegrationTest {
         assertThat(distinctDocIds).isEqualTo(1);
         assertThat(results.getFirst().docId()).isEqualTo(second.id().toString());
     }
+
+    @Test
+    void searchWithDocIdFilterOnlyReturnsThatDocument() {
+        DocumentSource doc = ingestionService.ingestMarkdown(
+                new ClassPathResource("samples/spring-boot-overview.md"),
+                "Spring Boot Overview");
+
+        List<SearchService.SearchResult> filtered =
+                searchService.search("auto-configuration", 5, doc.id().toString());
+        List<SearchService.SearchResult> noMatch =
+                searchService.search("auto-configuration", 5, java.util.UUID.randomUUID().toString());
+
+        assertThat(filtered).isNotEmpty();
+        assertThat(filtered).allMatch(r -> r.docId().equals(doc.id().toString()));
+        assertThat(noMatch).isEmpty();
+    }
 }

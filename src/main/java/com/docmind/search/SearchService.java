@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.ai.vectorstore.filter.FilterExpressionBuilder;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -16,10 +17,19 @@ public class SearchService {
     }
 
     public List<SearchResult> search(String query, int topK) {
-        return vectorStore.similaritySearch(SearchRequest.builder()
-                        .query(query)
-                        .topK(topK)
-                        .build())
+        return search(query, topK, null);
+    }
+
+    public List<SearchResult> search(String query, int topK, String docId) {
+        SearchRequest.Builder request = SearchRequest.builder()
+                .query(query)
+                .topK(topK);
+        if (docId != null && !docId.isBlank()) {
+            request.filterExpression(new FilterExpressionBuilder()
+                    .eq("doc_id", docId)
+                    .build());
+        }
+        return vectorStore.similaritySearch(request.build())
                 .stream()
                 .map(doc -> new SearchResult(
                         (String) doc.getMetadata().get("doc_id"),
