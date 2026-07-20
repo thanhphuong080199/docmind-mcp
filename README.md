@@ -3,7 +3,8 @@
 An MCP server that turns your private docs into a searchable, always-on knowledge base for
 any AI assistant. Built with Spring Boot 4.1 + Spring AI 2.0 + pgvector + Ollama.
 
-Work in progress — currently at Milestone 6 (stretch: web ingestion, chunk context, periodic re-scan).
+Work in progress — currently at Milestone 7 (Confluence Cloud ingestion), building on
+Milestone 6 (web ingestion, chunk context, periodic re-scan).
 
 ## Prerequisites
 
