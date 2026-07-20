@@ -33,19 +33,19 @@
 
 - [ ] **Step 1: Write the failing smoke test**
 
+Note: Boot 4 removed `TestRestTemplate` from `spring-boot-starter-test` (test-support modularization), so this test uses plain JDK `HttpClient` with the injected random port instead.
+
 ```java
 package com.docmind.mcp;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -55,27 +55,30 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class McpEndpointSmokeTest {
 
-    @Autowired
-    TestRestTemplate rest;
+    @Value("${local.server.port}")
+    int port;
 
     @Test
-    void initializeHandshakeReturnsServerInfo() {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        // Streamable-HTTP spec: client must accept both JSON and SSE
-        headers.set(HttpHeaders.ACCEPT, "application/json, text/event-stream");
+    void initializeHandshakeReturnsServerInfo() throws Exception {
         String initialize = """
                 {"jsonrpc":"2.0","id":1,"method":"initialize","params":{
                   "protocolVersion":"2025-06-18",
                   "capabilities":{},
                   "clientInfo":{"name":"smoke-test","version":"0.0.1"}}}
                 """;
+        HttpRequest request = HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/mcp"))
+                .header("Content-Type", "application/json")
+                // Streamable-HTTP spec: client must accept both JSON and SSE
+                .header("Accept", "application/json, text/event-stream")
+                .POST(HttpRequest.BodyPublishers.ofString(initialize))
+                .build();
 
-        ResponseEntity<String> response = rest.exchange(
-                "/mcp", HttpMethod.POST, new HttpEntity<>(initialize, headers), String.class);
+        try (HttpClient client = HttpClient.newHttpClient()) {
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).contains("docmind");
+            assertThat(response.statusCode()).isEqualTo(200);
+            assertThat(response.body()).contains("docmind");
+        }
     }
 }
 ```
