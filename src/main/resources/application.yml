@@ -9,7 +9,7 @@ spring:
     password: docmind
   ai:
     model:
-      chat: none
+      chat: ollama
     mcp:
       server:
         name: docmind
@@ -22,6 +22,8 @@ spring:
       base-url: http://localhost:11434
       init:
         pull-model-strategy: when_missing
+      chat:
+        model: qwen3:4b
       embedding:
         model: nomic-embed-text
     vectorstore:
