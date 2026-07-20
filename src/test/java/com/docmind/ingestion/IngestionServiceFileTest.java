@@ -80,4 +80,42 @@ class IngestionServiceFileTest {
                 Integer.class, second.id().toString());
         assertThat(chunkRows).isEqualTo(second.chunkCount());
     }
+
+    @Test
+    void ingestsPdfFile() throws Exception {
+        Path file = tempDir.resolve("vectors.pdf");
+        try (org.apache.pdfbox.pdmodel.PDDocument pdf = new org.apache.pdfbox.pdmodel.PDDocument()) {
+            var page = new org.apache.pdfbox.pdmodel.PDPage();
+            pdf.addPage(page);
+            try (var cs = new org.apache.pdfbox.pdmodel.PDPageContentStream(pdf, page)) {
+                cs.beginText();
+                cs.setFont(new org.apache.pdfbox.pdmodel.font.PDType1Font(
+                        org.apache.pdfbox.pdmodel.font.Standard14Fonts.FontName.HELVETICA), 12);
+                cs.newLineAtOffset(72, 700);
+                cs.showText("Vector databases store embeddings for semantic similarity search.");
+                cs.endText();
+            }
+            pdf.save(file.toFile());
+        }
+
+        DocumentSource doc = ingestionService.ingestFile(file);
+
+        assertThat(doc.docType()).isEqualTo("PDF");
+        assertThat(doc.status()).isEqualTo("INGESTED");
+        assertThat(doc.chunkCount()).isGreaterThan(0);
+    }
+
+    @Test
+    void unreadablePdfIsMarkedFailed() throws Exception {
+        Path file = tempDir.resolve("broken.pdf");
+        Files.writeString(file, "this is not a pdf");
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> ingestionService.ingestFile(file))
+                .isInstanceOf(IngestionException.class);
+
+        DocumentSource failed = repository.findBySourceUri(
+                file.toAbsolutePath().normalize().toUri().toString()).orElseThrow();
+        assertThat(failed.status()).isEqualTo("FAILED");
+        assertThat(failed.chunkCount()).isZero();
+    }
 }

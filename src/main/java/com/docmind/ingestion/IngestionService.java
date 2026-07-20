@@ -17,6 +17,7 @@ import com.docmind.domain.DocumentSourceRepository;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.reader.markdown.MarkdownDocumentReader;
 import org.springframework.ai.reader.markdown.config.MarkdownDocumentReaderConfig;
+import org.springframework.ai.reader.pdf.PagePdfDocumentReader;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.filter.FilterExpressionBuilder;
@@ -71,24 +72,33 @@ public class IngestionService {
         existing.ifPresent(this::removeExisting);
 
         UUID docId = UUID.randomUUID();
-        List<Document> chunks = splitter.apply(readDocs.get());
-        for (int i = 0; i < chunks.size(); i++) {
-            Document chunk = chunks.get(i);
-            chunk.getMetadata().put("doc_id", docId.toString());
-            chunk.getMetadata().put("source_uri", sourceUri);
-            chunk.getMetadata().put("chunk_index", i);
-        }
-        vectorStore.add(chunks);
+        try {
+            List<Document> chunks = splitter.apply(readDocs.get());
+            for (int i = 0; i < chunks.size(); i++) {
+                Document chunk = chunks.get(i);
+                chunk.getMetadata().put("doc_id", docId.toString());
+                chunk.getMetadata().put("source_uri", sourceUri);
+                chunk.getMetadata().put("chunk_index", i);
+            }
+            vectorStore.add(chunks);
 
-        return aggregateTemplate.insert(new DocumentSource(
-                docId, title, sourceUri, docType, checksum,
-                chunks.size(), null, "INGESTED", Instant.now()));
+            return aggregateTemplate.insert(new DocumentSource(
+                    docId, title, sourceUri, docType, checksum,
+                    chunks.size(), null, "INGESTED", Instant.now()));
+        }
+        catch (RuntimeException e) {
+            aggregateTemplate.insert(new DocumentSource(
+                    docId, title, sourceUri, docType, checksum,
+                    0, null, "FAILED", Instant.now()));
+            throw new IngestionException("Failed to ingest " + sourceUri + ": " + e.getMessage(), e);
+        }
     }
 
     private List<Document> readDocuments(String docType, Resource resource) {
         return switch (docType) {
             case "MARKDOWN" -> new MarkdownDocumentReader(resource,
                     MarkdownDocumentReaderConfig.builder().withIncludeCodeBlock(true).build()).get();
+            case "PDF" -> new PagePdfDocumentReader(resource).get();
             default -> throw new IllegalArgumentException("Unsupported doc type: " + docType);
         };
     }
@@ -104,6 +114,9 @@ public class IngestionService {
         String name = path.getFileName().toString().toLowerCase();
         if (name.endsWith(".md") || name.endsWith(".markdown")) {
             return "MARKDOWN";
+        }
+        if (name.endsWith(".pdf")) {
+            return "PDF";
         }
         throw new IllegalArgumentException("Unsupported file type: " + path.getFileName());
     }
